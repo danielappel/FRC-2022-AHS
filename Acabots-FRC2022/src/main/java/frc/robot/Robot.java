@@ -50,6 +50,8 @@ public class Robot extends TimedRobot {
   private final Joystick m_stick = new Joystick(0);
   private final Joystick driverTwoJoystick = new Joystick(1);
 
+  //Modify so that twist to turn isn't so severe.  Adjust as needed.
+  private final double TWIST_MULTIPLIER = 0.5;
 
   
 
@@ -64,7 +66,7 @@ public class Robot extends TimedRobot {
   }
 
   public void robotCamera(){
-    UsbCamera camera = UsbCamera.getInsance().startAutomaticCapture();
+   //UsbCamera camera = UsbCamera.getInsance().startAutomaticCapture();
   }
 
   @Override
@@ -72,7 +74,7 @@ public class Robot extends TimedRobot {
     // Drive with arcade drive.
     // That means that the Y axis drives forward
     // and backward, and the X turns left and right.
-    m_robotDrive.arcadeDrive(-m_stick.getY(), m_stick.getTwist());
+    m_robotDrive.arcadeDrive(-m_stick.getY(), TWIST_MULTIPLIER*m_stick.getTwist());
 
     if(m_stick.getRawButtonPressed(1)) {
       System.out.println("This is button 1");
