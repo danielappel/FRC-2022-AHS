@@ -11,7 +11,10 @@ import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.motorcontrol.PWMVictorSPX;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.cscore.UsbCamera;
- 
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cscore.CvSink;
+import edu.wpi.first.cscore.CvSource;
+
 
 //import com.ctre.phoenix.motorcontrol.*;
 //import com.ctre.phoenix.motorcontrol.can.*;
@@ -29,12 +32,13 @@ public class Robot extends TimedRobot {
   PWMVictorSPX motor_rightFront = new PWMVictorSPX(1);
   PWMVictorSPX motor_leftRear = new PWMVictorSPX(3);
   PWMVictorSPX motor_leftFront = new PWMVictorSPX(2);
+  PWMVictorSPX intakeMotor = new PWMVictorSPX(4);
 
   /**
    * private final PWMSparkMax m_leftMotor = new PWMSparkMax(0);
   private final PWMSparkMax m_rightMotor = new PWMSparkMax(1);
   private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftMotor, m_rightMotor);
-  private final Joystick m_stick = new Joystick(0);
+  private final Joystick mainDriverStick = new Joystick(0);
 
   Spark m_frontLeft = new Spark(1);
   Spark m_rearLeft = new Spark(2);
@@ -47,7 +51,9 @@ public class Robot extends TimedRobot {
 
 // Differential Drive Declaration
   DifferentialDrive m_robotDrive = new DifferentialDrive(mLeft, mRight);
-  private final Joystick m_stick = new Joystick(0);
+  private final Joystick mainDriverStick = new Joystick(0);
+
+  //Xbox controller??
   private final Joystick driverTwoJoystick = new Joystick(1);
 
   //Modify so that twist to turn isn't so severe.  Adjust as needed.
@@ -63,10 +69,16 @@ public class Robot extends TimedRobot {
     // result in both sides moving forward. Depending on how your robot's
     // gearbox is constructed, you might have to invert the left side instead.
      mRight.setInverted(true);
+     cameraControls();
+
   }
 
   public void robotCamera(){
-   //UsbCamera camera = UsbCamera.getInsance().startAutomaticCapture();
+   //UsbCamera usbCamera = new UsbCamera("USB Camera 0", 0);
+/*
+   camera.setResolution(640, 480);
+   CvSink cvSink = CameraServer.getVideo();
+   CvSource outputStream = CameraServer.putVideo("Blur", 640, 480);*/
   }
 
   @Override
@@ -74,10 +86,47 @@ public class Robot extends TimedRobot {
     // Drive with arcade drive.
     // That means that the Y axis drives forward
     // and backward, and the X turns left and right.
-    m_robotDrive.arcadeDrive(-m_stick.getY(), TWIST_MULTIPLIER*m_stick.getTwist());
 
-    if(m_stick.getRawButtonPressed(1)) {
+    /*intake motor
+    right Xbox joystick - only x-axis movement
+    TO DO: adjust by a multiplier to maybe make less severe
+    */
+
+    mainDriverControls();
+
+    secondDriverControls();
+
+
+    testButtons();
+
+  }
+
+  public void mainDriverControls(){
+    m_robotDrive.arcadeDrive(-mainDriverStick.getY(), TWIST_MULTIPLIER*mainDriverStick.getTwist());
+
+  }
+
+  public void secondDriverControls(){
+    intakeMotor.set(driverTwoJoystick.getRawAxis(2));
+    System.out.println("X axis on right side: " + driverTwoJoystick.getRawAxis(2));
+  }
+
+  public void cameraControls(){
+    //if (driverTwoJoystick.getRawButtonPressed(2))
+    {
+      UsbCamera camera = CameraServer.startAutomaticCapture();
+      //CvSink cvSink = CameraServer.getVideo();
+      //CvSource outputStream = CameraServer.putVideo("Blur", 640, 480);
+      
+    }
+  }
+  public void testButtons()
+  {
+    System.out.print("x: " + mainDriverStick.getRawAxis(5));
+    System.out.print("y: " + mainDriverStick.getRawAxis(6));
+    if(mainDriverStick.getRawButtonPressed(1)) {
       System.out.println("This is button 1");
+
     }
 
     if(driverTwoJoystick.getRawButtonPressed(1)) {
@@ -104,16 +153,12 @@ public class Robot extends TimedRobot {
       System.out.println("Driver two button 6");
     }
 
-
   }
 
 
 
   public void conveyerBelt(){
-    if (driverTwoJoystick.getRawButtonPressed(2)){
-      
-    }
-
+    
   }
 
 }
