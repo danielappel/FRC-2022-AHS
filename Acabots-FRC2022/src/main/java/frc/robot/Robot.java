@@ -17,6 +17,12 @@ import edu.wpi.first.cscore.CvSink;
 import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.wpilibj.Servo;
 
+//Limelight Imports
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
+
 
 //import com.ctre.phoenix.motorcontrol.*;
 //import com.ctre.phoenix.motorcontrol.can.*;
@@ -29,14 +35,21 @@ import edu.wpi.first.wpilibj.Servo;
  */
 public class Robot extends TimedRobot {
 
-  // Motor Declarations
+  // Drive Motor Declarations
   PWMVictorSPX motor_rightRear = new PWMVictorSPX(0);
   PWMVictorSPX motor_rightFront = new PWMVictorSPX(1);
   PWMVictorSPX motor_leftFront = new PWMVictorSPX(2);
   PWMVictorSPX motor_leftRear = new PWMVictorSPX(3);
-  PWMVictorSPX intakeMotor = new PWMVictorSPX(4);
-  PWMVictorSPX intakeLift = new PWMVictorSPX(5);
 
+  //Motor that spins intake wheels
+  PWMVictorSPX intakeWheels = new PWMVictorSPX(4);
+
+  //Motor that rotates intake
+  PWMVictorSPX intakeArm = new PWMVictorSPX(5);
+
+  //Motors that spin conveyor belts (raise and lower balls)
+  PWMSparkMax conveyor1 = new PWMSparkMax(6);
+  PWMSparkMax conveyor2 = new PWMSparkMax(7);
   //Flywheel motors
   PWMSparkMax shootBallLeft = new PWMSparkMax(8);
   PWMSparkMax shootBallRight = new PWMSparkMax(9);
@@ -68,12 +81,17 @@ public class Robot extends TimedRobot {
   //Modify so that twist to turn isn't so severe.  Adjust as needed.
   private final double TWIST_MULTIPLIER = 0.5;
   private final double THROTTLE_MULTIPLIER  = 0.75;
-  private final double LIFT_SPEED = 0.25;
+  private final double ARM_SPEED = 0.25;
+  private final double INTAKE_WHEELS_SPEED = 0.5;
+
+
+//Flywheel shooter speed
+  private double shootSpeed = 0;
 
   Servo cameraServo = new Servo (10);
 
 
- 
+  
 
   @Override
   public void robotInit() {
@@ -104,10 +122,6 @@ public class Robot extends TimedRobot {
     TO DO: adjust by a multiplier to maybe make less severe
     */
 
-    //Flywheel shooter function
-    //shooter();
-    conveyerBelt();
-
     mainDriverControls();
 
     secondDriverControls();
@@ -120,19 +134,19 @@ public class Robot extends TimedRobot {
   }
 
   public void mainDriverControls(){
+    //General driver controls
     m_robotDrive.arcadeDrive(-THROTTLE_MULTIPLIER*mainDriverStick.getY(), TWIST_MULTIPLIER*mainDriverStick.getTwist());
+
+    //Flywheel shooter function
+   
+    shooter();
 
   }
 
   public void secondDriverControls(){
 
-    //intakeLift.set(driverTwoJoystick.getRawAxis(0));
-    intakeMotor.set(driverTwoJoystick.getRawAxis(2));
-    //System.out.println("X axis on right side: " + driverTwoJoystick.getRawAxis(2));
-
-    //Testing controller
-    shootBallLeft.set(driverTwoJoystick.getRawAxis(0));
-    shootBallRight.set(-1*driverTwoJoystick.getRawAxis(0));
+    intakeRotate();
+    conveyor();
   }
 
   public void cameraGet(){
@@ -203,33 +217,44 @@ public class Robot extends TimedRobot {
 
     if(mainDriverStick.getRawButtonPressed(1)){
       System.out.println("Trigger pulled");
-      shootBallLeft.set(-1);
-      shootBallRight.set(1);
+      //Start to spin flywheel at max speed
+      shootSpeed = 1;
 
     }
-    else{
 
-     shootBallLeft.set(0);
-     shootBallLeft.set(0);
+    if(mainDriverStick.getRawButtonReleased(1)) {
+      //Turn off flywheel
+      shootSpeed = 0;
     }
+
+    //Continually updated shoot speed;
+    shootBallLeft.set(-1*shootSpeed);
+    shootBallRight.set(shootSpeed);
   }
 
-  public void conveyerBelt(){
+  public void intakeRotate(){
       if (driverTwoJoystick.getRawButtonPressed(4)){
-        System.out.println("Conveyer belt moving up");
-        intakeLift.set(LIFT_SPEED);
+        System.out.println("Arm moving in");
+        intakeArm.set(ARM_SPEED);
+        intakeWheels.set(INTAKE_WHEELS_SPEED); // spin wheels if bringing arm up
       }
       else if (driverTwoJoystick.getRawButtonPressed(2)){
-        System.out.println("Conveyer belt moving down");
-        intakeLift.set(-LIFT_SPEED);
+        System.out.println("Arm moving out"); 
+        intakeArm.set(-ARM_SPEED);
+        intakeWheels.set(0); //deactivate wheels if bring arm back down
       }
       else if (driverTwoJoystick.getRawButtonReleased(4) || driverTwoJoystick.getRawButtonReleased(2))
       {
-        intakeLift.set(0);
+        intakeArm.set(0);
+        intakeWheels.set(0);
       }
     }
 
-    
+  public void conveyor()
+  {
+      conveyor1.set(driverTwoJoystick.getRawAxis(0));
+      conveyor2.set(-driverTwoJoystick.getRawAxis(0));
+  }
 }
 
 
