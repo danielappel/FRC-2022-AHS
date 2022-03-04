@@ -51,8 +51,8 @@ public class Robot extends TimedRobot {
   PWMSparkMax conveyor1 = new PWMSparkMax(6);
   PWMSparkMax conveyor2 = new PWMSparkMax(7);
   //Flywheel motors
-  PWMSparkMax shootBallLeft = new PWMSparkMax(8);
-  PWMSparkMax shootBallRight = new PWMSparkMax(9);
+  PWMSparkMax shootBallLeft = new PWMSparkMax(10);
+  PWMSparkMax shootBallRight = new PWMSparkMax(8);
 
 
 
@@ -81,14 +81,14 @@ public class Robot extends TimedRobot {
   //Modify so that twist to turn isn't so severe.  Adjust as needed.
   private final double TWIST_MULTIPLIER = 0.5;
   private final double THROTTLE_MULTIPLIER  = 0.75;
-  private final double ARM_SPEED = 0.25;
+  private final double ARM_SPEED = 0.5;
   private final double INTAKE_WHEELS_SPEED = 0.5;
 
 
 //Flywheel shooter speed
   private double shootSpeed = 0;
 
-  Servo cameraServo = new Servo (10);
+  Servo cameraServo = new Servo (9);
 
 
   
@@ -218,7 +218,7 @@ public class Robot extends TimedRobot {
     if(mainDriverStick.getRawButtonPressed(1)){
       System.out.println("Trigger pulled");
       //Start to spin flywheel at max speed
-      shootSpeed = 1;
+      shootSpeed = -1;
 
     }
 
@@ -227,12 +227,31 @@ public class Robot extends TimedRobot {
       shootSpeed = 0;
     }
 
+    if(mainDriverStick.getRawButtonPressed(2))
+    {
+      System.out.println("Side Button pressed");
+      shootSpeed = -0.5;
+    }
+    if(mainDriverStick.getRawButtonReleased(2))
+    {
+      shootSpeed = 0;
+    }
     //Continually updated shoot speed;
     shootBallLeft.set(-1*shootSpeed);
     shootBallRight.set(shootSpeed);
   }
 
   public void intakeRotate(){
+      if(driverTwoJoystick.getRawButtonPressed(1))
+      {
+        System.out.println("Spinner activated.");
+        intakeWheels.set(INTAKE_WHEELS_SPEED);
+      }
+      if(driverTwoJoystick.getRawButtonPressed(3))
+      {
+        System.out.println("Spinner deactivated");
+        intakeWheels.set(0);
+      }
       if (driverTwoJoystick.getRawButtonPressed(4)){
         System.out.println("Arm moving in");
         intakeArm.set(ARM_SPEED);
@@ -252,7 +271,7 @@ public class Robot extends TimedRobot {
 
   public void conveyor()
   {
-      conveyor1.set(driverTwoJoystick.getRawAxis(0));
+      conveyor1.set(-driverTwoJoystick.getRawAxis(0));
       conveyor2.set(-driverTwoJoystick.getRawAxis(0));
   }
 }
