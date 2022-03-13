@@ -90,9 +90,35 @@ public class Robot extends TimedRobot {
 
   Servo cameraServo = new Servo (9);
 
+//Limelight initialization  
+boolean has_target = false;
+double drive_max = 0.5;
+double drive_command = 0.0;
+double steer_command = 0.0;
 
-  
+NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
+NetworkTableEntry tv = table.getEntry("tv");
+NetworkTableEntry tx = table.getEntry("tx");
+NetworkTableEntry ty = table.getEntry("ty");
+NetworkTableEntry ta = table.getEntry("ta");
 
+//angle that the limelight is mounted, relative to horizontal 
+double mountAngle = 38.0;
+
+// distance from the center of the Limelight lens to the floor
+double limeHeight = 24.0;
+
+// distance from the target to the floor
+double goalHeight = 104.0;
+double lowGoalHeight = 48.0;
+
+//limits robot's corrective movements 
+double driveCoeff = .20;
+double steerCoeff = .05;
+//target distance (in inches)
+double  distance;
+double targetDistance = 48; 
+boolean achievedTarget = false;
   @Override
   public void robotInit() {
     // We need to invert one side of the drivetrain so that positive voltages
@@ -128,7 +154,8 @@ public class Robot extends TimedRobot {
 
     cameraControls();
 
-
+    updateSensor();
+    correct();
     //testButtons();
 
   }
@@ -273,6 +300,48 @@ public class Robot extends TimedRobot {
   {
       conveyor1.set(-driverTwoJoystick.getRawAxis(0));
       conveyor2.set(-driverTwoJoystick.getRawAxis(0));
+  }
+  public void updateSensor()
+  {
+    //retrieve values
+      double v = tv.getDouble(0.0);
+      double x = tx.getDouble(0.0);
+      double y = ty.getDouble(0.0);
+      double area = ta.getDouble(0.0);
+
+      //update to dashboard
+      SmartDashboard.putNumber("LimelightX", x);
+      SmartDashboard.putNumber("LimelightY", y);
+      SmartDashboard.putNumber("LimelightArea", area);
+      //check target
+
+      if(v < 1.0)
+      {
+        has_target = false;
+        drive_command = 0.0;
+        steer_command = 0.0;
+        return;
+      }
+      has_target = true;
+      steer_command = x*steerCoeff;
+      //distance calculations
+      double goalAngle = y;
+      double totalAngles = mountAngle + goalAngle; //find total angle to goal from horizontal
+      double totalAngles_rad = totalAngles * (3.14159 / 180.0); // convert to radians, multiply by pi/180
+      distance = (goalHeight - limeHeight)/Math.tan(totalAngles_rad); // find adjacent leg of right triangle
+      SmartDashboard.putNumber("Distance to Target", distance);
+      System.out.println("Distance to Target" + distance);
+      drive_command = (distance - targetDistance)*driveCoeff; // take difference as command
+      drive_command = drive_command > drive_max ? drive_max : drive_command;
+  }
+  public void correct()
+  {
+      if(has_target && driverTwoJoystick.getRawButton(7) && !achievedTarget)
+      {
+        m_robotDrive.arcadeDrive(drive_command, steer_command);
+      }
+      achievedTarget = Math.abs(distance-targetDistance) < 4;
+
   }
 }
 
