@@ -23,9 +23,8 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 
-
-//import com.ctre.phoenix.motorcontrol.*;
-//import com.ctre.phoenix.motorcontrol.can.*;
+//timer import
+import edu.wpi.first.wpilibj.Timer;
 
 
 
@@ -82,7 +81,7 @@ public class Robot extends TimedRobot {
   private final double TWIST_MULTIPLIER = 0.5;
   private final double THROTTLE_MULTIPLIER  = 0.75;
   private final double ARM_SPEED = 0.5;
-  private final double INTAKE_WHEELS_SPEED = 0.5;
+  private final double INTAKE_WHEELS_SPEED = 0.3;
 
 
 //Flywheel shooter speed
@@ -103,7 +102,7 @@ NetworkTableEntry ty = table.getEntry("ty");
 NetworkTableEntry ta = table.getEntry("ta");
 
 //angle that the limelight is mounted, relative to horizontal 
-double mountAngle = 38.0;
+double mountAngle = 41.0;
 
 // distance from the center of the Limelight lens to the floor
 double limeHeight = 24.0;
@@ -117,8 +116,14 @@ double driveCoeff = .20;
 double steerCoeff = .05;
 //target distance (in inches)
 double  distance;
-double targetDistance = 48; 
+double targetDistance = 65; 
 boolean achievedTarget = false;
+boolean once = true; //only shoot once during autonomous
+
+
+//timer 
+
+Timer timer = new Timer();
   @Override
   public void robotInit() {
     // We need to invert one side of the drivetrain so that positive voltages
@@ -136,7 +141,36 @@ boolean achievedTarget = false;
    CvSink cvSink = CameraServer.getVideo();
    CvSource outputStream = CameraServer.putVideo("Blur", 640, 480);*/
   }
-
+  @Override
+  public  void autonomousInit()
+  {
+    timer.reset();
+    timer.start();
+  }
+  @Override
+  public void autonomousPeriodic()
+  {
+    if(timer.get() < 2)
+    {
+      m_robotDrive.arcadeDrive(-.5, 0);
+    }
+    else
+    {
+      updateSensor();
+      correct();
+      if(achievedTarget && once)
+      {
+        shootSpeed = -.98;
+        shootBallLeft.set(-1*shootSpeed);
+        shootBallRight.set(shootSpeed);
+        timer.delay(2);
+        conveyor1.set(-1);
+        conveyor2.set(-1);
+        timer.delay(5);
+        once = false;
+      }
+    }
+  }
   @Override
   public void teleopPeriodic() {
     // Drive with arcade drive.
@@ -245,7 +279,7 @@ boolean achievedTarget = false;
     if(mainDriverStick.getRawButtonPressed(1)){
       System.out.println("Trigger pulled");
       //Start to spin flywheel at max speed
-      shootSpeed = -1;
+      shootSpeed = -.98;
 
     }
 
@@ -333,6 +367,7 @@ boolean achievedTarget = false;
       System.out.println("Distance to Target" + distance);
       drive_command = (distance - targetDistance)*driveCoeff; // take difference as command
       drive_command = drive_command > drive_max ? drive_max : drive_command;
+      drive_command = drive_command < -drive_max ? -drive_max : drive_command;
   }
   public void correct()
   {
@@ -343,6 +378,21 @@ boolean achievedTarget = false;
       achievedTarget = Math.abs(distance-targetDistance) < 4;
 
   }
+/*
+  public void lightControls()
+  {
+    if(driverTwoJoystick.getRawButtonPressed(5))
+    {
+      System.out.print("Turning off");
+      table.getEntry("ledMode").setNumber(1); //force off
+    }
+    else if(driverTwoJoystick.getRawButtonPressed(6))
+    {
+      System.out.print("Turning on");
+      table.getEntry("ledMode").setNumber(3); //force on
+    }
+  }
+  */
 }
 
 
