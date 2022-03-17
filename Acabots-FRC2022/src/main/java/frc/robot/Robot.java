@@ -81,7 +81,7 @@ public class Robot extends TimedRobot {
   private final double TWIST_MULTIPLIER = 0.5;
   private final double THROTTLE_MULTIPLIER  = 0.75;
   private final double ARM_SPEED = 0.5;
-  private final double INTAKE_WHEELS_SPEED = 0.3;
+  private final double INTAKE_WHEELS_SPEED = 0.2;
 
 
 //Flywheel shooter speed
@@ -91,7 +91,7 @@ public class Robot extends TimedRobot {
 
 //Limelight initialization  
 boolean has_target = false;
-double drive_max = 0.5;
+double drive_max = 0.6;
 double drive_command = 0.0;
 double steer_command = 0.0;
 
@@ -154,20 +154,29 @@ Timer timer = new Timer();
     {
       m_robotDrive.arcadeDrive(-.5, 0);
     }
-    else
+    else if(once)
     {
       updateSensor();
-      correct();
+      if(has_target && !achievedTarget)
+      {
+        m_robotDrive.arcadeDrive(drive_command, steer_command);
+      }
+      achievedTarget = Math.abs(distance-targetDistance) < 4;
       if(achievedTarget && once)
       {
-        shootSpeed = -.98;
+        shootSpeed = -1;
         shootBallLeft.set(-1*shootSpeed);
         shootBallRight.set(shootSpeed);
-        timer.delay(2);
+        timer.delay(3);
         conveyor1.set(-1);
         conveyor2.set(-1);
         timer.delay(5);
         once = false;
+        shootBallLeft.set(0);
+        shootBallRight.set(0);
+        conveyor1.set(0);
+        conveyor2.set(-0);
+        achievedTarget = false; 
       }
     }
   }
@@ -279,7 +288,7 @@ Timer timer = new Timer();
     if(mainDriverStick.getRawButtonPressed(1)){
       System.out.println("Trigger pulled");
       //Start to spin flywheel at max speed
-      shootSpeed = -.98;
+      shootSpeed = -1;
 
     }
 
