@@ -78,10 +78,10 @@ public class Robot extends TimedRobot {
   private final Joystick driverTwoJoystick = new Joystick(1);
 
   //Modify so that twist to turn isn't so severe.  Adjust as needed.
-  private final double TWIST_MULTIPLIER = 0.5;
-  private final double THROTTLE_MULTIPLIER  = 0.75;
-  private final double ARM_SPEED = 0.5;
-  private final double INTAKE_WHEELS_SPEED = 0.2;
+  private final double TWIST_MULTIPLIER = 0.70;
+  private final double THROTTLE_MULTIPLIER  = .92;
+  private final double ARM_SPEED = 0.65;
+  private final double INTAKE_WHEELS_SPEED = 0.3;
 
 
 //Flywheel shooter speed
@@ -102,7 +102,7 @@ NetworkTableEntry ty = table.getEntry("ty");
 NetworkTableEntry ta = table.getEntry("ta");
 
 //angle that the limelight is mounted, relative to horizontal 
-double mountAngle = 41.0;
+double mountAngle = 40.0;
 
 // distance from the center of the Limelight lens to the floor
 double limeHeight = 24.0;
@@ -116,10 +116,11 @@ double driveCoeff = .20;
 double steerCoeff = .05;
 //target distance (in inches)
 double  distance;
-double targetDistance = 65; 
+double targetDistance = 80; 
+double targetAuto = 85;
 boolean achievedTarget = false;
 boolean once = true; //only shoot once during autonomous
-
+double adjustSteer =0.00;
 
 //timer 
 
@@ -150,21 +151,21 @@ Timer timer = new Timer();
   @Override
   public void autonomousPeriodic()
   {
-    if(timer.get() < 2)
+    if(timer.get() < 4)
     {
-      m_robotDrive.arcadeDrive(-.5, 0);
+      m_robotDrive.arcadeDrive(-.4, 0);
     }
     else if(once)
     {
-      updateSensor();
+      updateSensor(targetAuto);
       if(has_target && !achievedTarget)
       {
-        m_robotDrive.arcadeDrive(drive_command, steer_command);
+        m_robotDrive.arcadeDrive(drive_command, steer_command+adjustSteer);
       }
-      achievedTarget = Math.abs(distance-targetDistance) < 4;
+      achievedTarget = Math.abs(distance-targetAuto) < 4;
       if(achievedTarget && once)
       {
-        shootSpeed = -1;
+        shootSpeed = -.83;
         shootBallLeft.set(-1*shootSpeed);
         shootBallRight.set(shootSpeed);
         timer.delay(3);
@@ -197,7 +198,7 @@ Timer timer = new Timer();
 
     cameraControls();
 
-    updateSensor();
+    updateSensor(targetDistance);
     correct();
     //testButtons();
 
@@ -205,7 +206,7 @@ Timer timer = new Timer();
 
   public void mainDriverControls(){
     //General driver controls
-    m_robotDrive.arcadeDrive(-THROTTLE_MULTIPLIER*mainDriverStick.getY(), TWIST_MULTIPLIER*mainDriverStick.getTwist());
+    m_robotDrive.arcadeDrive(-THROTTLE_MULTIPLIER*mainDriverStick.getY(), TWIST_MULTIPLIER*mainDriverStick.getTwist()+adjustSteer);
 
     //Flywheel shooter function
    
@@ -288,7 +289,7 @@ Timer timer = new Timer();
     if(mainDriverStick.getRawButtonPressed(1)){
       System.out.println("Trigger pulled");
       //Start to spin flywheel at max speed
-      shootSpeed = -1;
+      shootSpeed = -.83;
 
     }
 
@@ -344,7 +345,7 @@ Timer timer = new Timer();
       conveyor1.set(-driverTwoJoystick.getRawAxis(0));
       conveyor2.set(-driverTwoJoystick.getRawAxis(0));
   }
-  public void updateSensor()
+  public void updateSensor(double target)
   {
     //retrieve values
       double v = tv.getDouble(0.0);
@@ -374,7 +375,7 @@ Timer timer = new Timer();
       distance = (goalHeight - limeHeight)/Math.tan(totalAngles_rad); // find adjacent leg of right triangle
       SmartDashboard.putNumber("Distance to Target", distance);
       System.out.println("Distance to Target" + distance);
-      drive_command = (distance - targetDistance)*driveCoeff; // take difference as command
+      drive_command = (distance - target)*driveCoeff; // take difference as command
       drive_command = drive_command > drive_max ? drive_max : drive_command;
       drive_command = drive_command < -drive_max ? -drive_max : drive_command;
   }
@@ -382,7 +383,7 @@ Timer timer = new Timer();
   {
       if(has_target && driverTwoJoystick.getRawButton(7) && !achievedTarget)
       {
-        m_robotDrive.arcadeDrive(drive_command, steer_command);
+        m_robotDrive.arcadeDrive(drive_command, steer_command+adjustSteer);
       }
       achievedTarget = Math.abs(distance-targetDistance) < 4;
 
